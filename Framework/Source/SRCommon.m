@@ -171,8 +171,6 @@ NSString *SRCharacterForKeyCodeAndCocoaFlags(NSInteger keyCode, NSUInteger cocoa
 	
 	UInt32              deadKeyState;
     OSStatus err = noErr;
-    CFLocaleRef locale = CFLocaleCopyCurrent();
-	[(id)CFMakeCollectable(locale) autorelease]; // Autorelease here so that it gets released no matter what
 	
 	TISInputSourceRef tisSource = TISCopyCurrentKeyboardInputSource();
     if(!tisSource)
@@ -197,12 +195,14 @@ NSString *SRCharacterForKeyCodeAndCocoaFlags(NSInteger keyCode, NSUInteger cocoa
 
 	CFStringRef temp = CFStringCreateWithCharacters(kCFAllocatorDefault, unicodeString, 1);
 	CFMutableStringRef mutableTemp = CFStringCreateMutableCopy(kCFAllocatorDefault, 0, temp);
+    CFLocaleRef locale = CFLocaleCopyCurrent();
 
-	CFStringCapitalize(mutableTemp, locale);
+    CFStringCapitalize(mutableTemp, locale);
 
-	NSString *resultString = [NSString stringWithString:(NSString *)mutableTemp];
+	NSString *resultString = [NSString stringWithString:(__bridge NSString *)mutableTemp];
 
 	if (temp) CFRelease(temp);
+    if (locale) CFRelease(locale);
 	if (mutableTemp) CFRelease(mutableTemp);
 
 	PUDNSLog(@"character: -%@-", (NSString *)resultString);
@@ -269,7 +269,7 @@ static NSMutableDictionary *SRSharedImageCache = nil;
 + (NSImage *)supportingImageWithName:(NSString *)name {
 //	NSLog(@"supportingImageWithName: %@", name);
 	if (nil == SRSharedImageCache) {
-		SRSharedImageCache = [[NSMutableDictionary dictionary] retain];
+		SRSharedImageCache = [NSMutableDictionary dictionary];
 //		NSLog(@"inited cache");
 	}
 	NSImage *cachedImage = nil;
@@ -289,8 +289,6 @@ static NSMutableDictionary *SRSharedImageCache = nil;
 //	NSLog(@"created customImageRep: %@", customImageRep);
 	NSImage *returnImage = [[NSImage alloc] initWithSize:size];
 	[returnImage addRepresentation:customImageRep];
-	[customImageRep release];
-	[returnImage setScalesWhenResized:YES];
 	[SRSharedImageCache setObject:returnImage forKey:name];
 	
 #ifdef SRCommonWriteDebugImagery
@@ -308,14 +306,14 @@ static NSMutableDictionary *SRSharedImageCache = nil;
 	[returnImageQDRPL addRepresentation:customImageRepQDRPL];
 	[customImageRepQDRPL release];
 	[returnImageQDRPL setScalesWhenResized:YES];
-	[returnImageQDRPL setFlipped:YES];
+//	[returnImageQDRPL setFlipped:YES];
 	NSData *tiffQDRPL = [returnImageQDRPL TIFFRepresentation];
 	[tiffQDRPL writeToURL:[NSURL fileURLWithPath:[[NSString stringWithFormat:@"~/Desktop/m_QDRPL_%@.tiff", name] stringByExpandingTildeInPath]] atomically:YES];
 	
 #endif
 	
 //	NSLog(@"returned image: %@", returnImage);
-	return [returnImage autorelease];
+	return returnImage;
 }
 @end
 
@@ -363,9 +361,6 @@ static NSMutableDictionary *SRSharedImageCache = nil;
 	
 	[bp fill];
 	
-	[bp release];
-	[flip release];
-	[sh release];
 }
 
 + (NSValue *)_sizeSRRemoveShortcut {
@@ -396,7 +391,6 @@ static NSMutableDictionary *SRSharedImageCache = nil;
 	[cross lineToPoint:MakeRelativePoint(4.0f,10.0f)];
 		
 	[cross stroke];
-	[cross release];
 }
 + (void)_drawSRRemoveShortcut:(id)anNSCustomImageRep {
 	
