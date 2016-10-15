@@ -47,7 +47,7 @@
 
 @implementation SRRecorderCell
 
-- (id)init
+- (instancetype)init
 {
     self = [super init];
 	
@@ -68,13 +68,13 @@
 
 #pragma mark *** Coding Support ***
 
-- (id)initWithCoder:(NSCoder *)aDecoder
+- (instancetype)initWithCoder:(NSCoder *)aDecoder
 {
 	self = [super initWithCoder: aDecoder];
 	
 	[self _privateInit];
 
-	if ([aDecoder allowsKeyedCoding]) {
+	if (aDecoder.allowsKeyedCoding) {
 		autosaveName = [aDecoder decodeObjectForKey: @"autosaveName"];
 		
 		keyCombo.code = [[aDecoder decodeObjectForKey: @"keyComboCode"] shortValue];
@@ -115,32 +115,32 @@
 {
 	[super encodeWithCoder: aCoder];
 	
-	if ([aCoder allowsKeyedCoding]) {
-		[aCoder encodeObject:[self autosaveName] forKey:@"autosaveName"];
-		[aCoder encodeObject:[NSNumber numberWithShort: keyCombo.code] forKey:@"keyComboCode"];
-		[aCoder encodeObject:[NSNumber numberWithUnsignedInteger:keyCombo.flags] forKey:@"keyComboFlags"];
+	if (aCoder.allowsKeyedCoding) {
+		[aCoder encodeObject:self.autosaveName forKey:@"autosaveName"];
+		[aCoder encodeObject:@(keyCombo.code) forKey:@"keyComboCode"];
+		[aCoder encodeObject:@(keyCombo.flags) forKey:@"keyComboFlags"];
 	
-		[aCoder encodeObject:[NSNumber numberWithUnsignedInteger:allowedFlags] forKey:@"allowedFlags"];
-		[aCoder encodeObject:[NSNumber numberWithUnsignedInteger:requiredFlags] forKey:@"requiredFlags"];
+		[aCoder encodeObject:@(allowedFlags) forKey:@"allowedFlags"];
+		[aCoder encodeObject:@(requiredFlags) forKey:@"requiredFlags"];
 		
 		if (hasKeyChars) {
 			[aCoder encodeObject:keyChars forKey:@"keyChars"];
 			[aCoder encodeObject:keyCharsIgnoringModifiers forKey:@"keyCharsIgnoringModifiers"];
 		}
 		
-		[aCoder encodeObject:[NSNumber numberWithBool: allowsKeyOnly] forKey:@"allowsKeyOnly"];
-		[aCoder encodeObject:[NSNumber numberWithBool: escapeKeysRecord] forKey:@"escapeKeysRecord"];
+		[aCoder encodeObject:@(allowsKeyOnly) forKey:@"allowsKeyOnly"];
+		[aCoder encodeObject:@(escapeKeysRecord) forKey:@"escapeKeysRecord"];
 		
-		[aCoder encodeObject:[NSNumber numberWithBool: isAnimating] forKey:@"isAnimating"];
-		[aCoder encodeObject:[NSNumber numberWithShort:style] forKey:@"style"];
+		[aCoder encodeObject:@(isAnimating) forKey:@"isAnimating"];
+		[aCoder encodeObject:@(style) forKey:@"style"];
 	} else {
 		// Unkeyed archiving and encoding is deprecated and unsupported. Use keyed archiving and encoding.
-		[aCoder encodeObject: [self autosaveName]];
-		[aCoder encodeObject: [NSNumber numberWithShort: keyCombo.code]];
-		[aCoder encodeObject: [NSNumber numberWithUnsignedInteger: keyCombo.flags]];
+		[aCoder encodeObject: self.autosaveName];
+		[aCoder encodeObject: @(keyCombo.code)];
+		[aCoder encodeObject: @(keyCombo.flags)];
 		
-		[aCoder encodeObject: [NSNumber numberWithUnsignedInteger:allowedFlags]];
-		[aCoder encodeObject: [NSNumber numberWithUnsignedInteger:requiredFlags]];
+		[aCoder encodeObject: @(allowedFlags)];
+		[aCoder encodeObject: @(requiredFlags)];
 	}
 }
 
@@ -261,7 +261,7 @@
 			[roundedRect stroke];
 			
 		// If key combination is set and valid, draw remove image
-			if (![self _isEmpty] && [self isEnabled])
+			if (![self _isEmpty] && self.enabled)
 			{
 				NSString *removeImageName = [NSString stringWithFormat: @"SRRemoveShortcut%@", (mouseInsideTrackingArea ? (mouseDown ? @"Pressed" : @"Rollover") : (mouseDown ? @"Rollover" : @""))];
 				NSImage *removeImage = SRResIndImage(removeImageName);
@@ -273,15 +273,14 @@
 		
 	// Draw text
 		NSMutableParagraphStyle *mpstyle = [[NSParagraphStyle defaultParagraphStyle] mutableCopy];
-		[mpstyle setLineBreakMode: NSLineBreakByTruncatingTail];
-		[mpstyle setAlignment: NSCenterTextAlignment];
+		mpstyle.lineBreakMode = NSLineBreakByTruncatingTail;
+		mpstyle.alignment = NSCenterTextAlignment;
 		
 	// Only the KeyCombo should be black and in a bigger font size
 		BOOL recordingOrEmpty = (isRecording || [self _isEmpty]);
-		NSDictionary *attributes = [NSDictionary dictionaryWithObjectsAndKeys: mpstyle, NSParagraphStyleAttributeName,
-			[NSFont systemFontOfSize: (recordingOrEmpty ? [NSFont labelFontSize] : [NSFont smallSystemFontSize])], NSFontAttributeName,
-			(recordingOrEmpty ? [NSColor disabledControlTextColor] : [NSColor blackColor]), NSForegroundColorAttributeName, 
-			nil];
+		NSDictionary *attributes = @{NSParagraphStyleAttributeName: mpstyle,
+			NSFontAttributeName: [NSFont systemFontOfSize: (recordingOrEmpty ? [NSFont labelFontSize] : [NSFont smallSystemFontSize])],
+			NSForegroundColorAttributeName: (recordingOrEmpty ? [NSColor disabledControlTextColor] : [NSColor blackColor])};
 		
 		NSString *displayString;
 		
@@ -307,7 +306,7 @@
 				displayString = SRStringForCocoaModifierFlags( recordingFlags );
 				
 			// Fall back on 'Type shortcut' if we don't have modifier flags to display; this will happen for the fn key depressed
-				if (![displayString length])
+				if (!displayString.length)
 				{
 					displayString = SRLoc(@"Type shortcut");
 				}
@@ -323,7 +322,7 @@
 			else
 			{
 			// Display current key combination
-				displayString = [self keyComboString];
+				displayString = self.keyComboString;
 			}
 		}
 		
@@ -338,7 +337,7 @@
 		[displayString drawInRect:textRect withAttributes:attributes];
 		
     // draw a focus ring...?
-		if ( [self showsFirstResponder] )
+		if ( self.showsFirstResponder )
 		{
 			[NSGraphicsContext saveGraphicsState];
 			NSSetFocusRingStyle(NSFocusRingOnly);
@@ -440,7 +439,7 @@
 				gradient = [[NSGradient alloc] initWithStartingColor:[NSColor colorWithCalibratedWhite:0.75f alpha:alphaRecording]
 														 endingColor:[NSColor colorWithCalibratedWhite:0.90f alpha:alphaRecording]];
 			}
-			CGFloat insetAmount = -([snapBackButton lineWidth]/2.0f);
+			CGFloat insetAmount = -(snapBackButton.lineWidth/2.0f);
 			[gradient drawInRect:NSInsetRect(correctedSnapBackRect, insetAmount, insetAmount) angle:90.0f];
 
 			/*
@@ -461,7 +460,7 @@
 		{
 			*/	
 		// If key combination is set and valid, draw remove image
-		if (![self _isEmpty] && [self isEnabled])
+		if (![self _isEmpty] && self.enabled)
 		{
 			NSString *removeImageName = [NSString stringWithFormat: @"SRRemoveShortcut%@", (mouseInsideTrackingArea ? (mouseDown ? @"Pressed" : @"Rollover") : (mouseDown ? @"Rollover" : @""))];
 			NSImage *removeImage = SRResIndImage(removeImageName);
@@ -474,8 +473,8 @@
 		
 	// Draw text
 		NSMutableParagraphStyle *mpstyle = [[NSParagraphStyle defaultParagraphStyle] mutableCopy];
-		[mpstyle setLineBreakMode: NSLineBreakByTruncatingTail];
-		[mpstyle setAlignment: NSCenterTextAlignment];
+		mpstyle.lineBreakMode = NSLineBreakByTruncatingTail;
+		mpstyle.alignment = NSCenterTextAlignment;
 		
 		CGFloat alphaCombo = alphaView;
 		CGFloat alphaRecordingText = alphaRecording;
@@ -490,10 +489,9 @@
 		{
 	// Only the KeyCombo should be black and in a bigger font size
 			BOOL recordingOrEmpty = (isVaguelyRecording || [self _isEmpty]);
-			NSDictionary *attributes = [NSDictionary dictionaryWithObjectsAndKeys: mpstyle, NSParagraphStyleAttributeName,
-				[NSFont systemFontOfSize: (recordingOrEmpty ? [NSFont labelFontSize] : [NSFont smallSystemFontSize])], NSFontAttributeName,
-				[(recordingOrEmpty ? [NSColor disabledControlTextColor] : [NSColor blackColor]) colorWithAlphaComponent:alphaRecordingText], NSForegroundColorAttributeName, 
-				nil];
+			NSDictionary *attributes = @{NSParagraphStyleAttributeName: mpstyle,
+				NSFontAttributeName: [NSFont systemFontOfSize: (recordingOrEmpty ? [NSFont labelFontSize] : [NSFont smallSystemFontSize])],
+				NSForegroundColorAttributeName: [(recordingOrEmpty ? [NSColor disabledControlTextColor] : [NSColor blackColor]) colorWithAlphaComponent:alphaRecordingText]};
 		// Recording, but no modifier keys down
 			if (![self _validModifierFlags: recordingFlags])
 			{
@@ -514,7 +512,7 @@
 				displayString = SRStringForCocoaModifierFlags( recordingFlags );
 				
 			// Fall back on 'Type shortcut' if we don't have modifier flags to display; this will happen for the fn key depressed
-				if (![displayString length])
+				if (!displayString.length)
 				{
 					displayString = SRLoc(@"Type shortcut");
 				}
@@ -535,10 +533,9 @@
 		
 		{
 	// Only the KeyCombo should be black and in a bigger font size
-			NSDictionary *attributes = [NSDictionary dictionaryWithObjectsAndKeys: mpstyle, NSParagraphStyleAttributeName,
-				[NSFont systemFontOfSize: ([self _isEmpty] ? [NSFont labelFontSize] : [NSFont smallSystemFontSize])], NSFontAttributeName,
-				[([self _isEmpty] ? [NSColor disabledControlTextColor] : [NSColor blackColor]) colorWithAlphaComponent:alphaCombo], NSForegroundColorAttributeName, 
-				nil];
+			NSDictionary *attributes = @{NSParagraphStyleAttributeName: mpstyle,
+				NSFontAttributeName: [NSFont systemFontOfSize: ([self _isEmpty] ? [NSFont labelFontSize] : [NSFont smallSystemFontSize])],
+				NSForegroundColorAttributeName: [([self _isEmpty] ? [NSColor disabledControlTextColor] : [NSColor blackColor]) colorWithAlphaComponent:alphaCombo]};
 		// Not recording...
 			if ([self _isEmpty])
 			{
@@ -547,7 +544,7 @@
 			else
 			{
 			// Display current key combination
-				displayString = [self keyComboString];
+				displayString = self.keyComboString;
 			}
 	// Calculate rect in which to draw the text in...
 			NSRect textRect = cellFrame;
@@ -573,7 +570,7 @@
 		
     // draw a focus ring...?
 		
-		if ( [self showsFirstResponder] )
+		if ( self.showsFirstResponder )
 		{
 			[NSGraphicsContext saveGraphicsState];
 			NSSetFocusRingStyle(NSFocusRingOnly);
@@ -589,12 +586,12 @@
 
 - (void)resetTrackingRects
 {	
-	SRRecorderControl *controlView = (SRRecorderControl *)[self controlView];
-	NSRect cellFrame = [controlView bounds];
-	NSPoint mouseLocation = [controlView convertPoint:[[NSApp currentEvent] locationInWindow] fromView:nil];
+	SRRecorderControl *controlView = (SRRecorderControl *)self.controlView;
+	NSRect cellFrame = controlView.bounds;
+	NSPoint mouseLocation = [controlView convertPoint:NSApp.currentEvent.locationInWindow fromView:nil];
 
 	// We're not to be tracked if we're not enabled
-	if (![self isEnabled])
+	if (!self.enabled)
 	{
 		if (removeTrackingRectTag != 0) [controlView removeTrackingRect: removeTrackingRectTag];
 		if (snapbackTrackingRectTag != 0) [controlView removeTrackingRect: snapbackTrackingRectTag];
@@ -629,9 +626,9 @@
 
 - (void)mouseEntered:(NSEvent *)theEvent
 {
-	NSView *view = [self controlView];
+	NSView *view = self.controlView;
 
-	if ([[view window] isKeyWindow] || [view acceptsFirstMouse: theEvent])
+	if (view.window.keyWindow || [view acceptsFirstMouse: theEvent])
 	{
 		mouseInsideTrackingArea = YES;
 		[view display];
@@ -640,9 +637,9 @@
 
 - (void)mouseExited:(NSEvent*)theEvent
 {
-	NSView *view = [self controlView];
+	NSView *view = self.controlView;
 	
-	if ([[view window] isKeyWindow] || [view acceptsFirstMouse: theEvent])
+	if (view.window.keyWindow || [view acceptsFirstMouse: theEvent])
 	{
 		mouseInsideTrackingArea = NO;
 		[view display];
@@ -661,9 +658,9 @@
 	if (!NSEqualRects(trackingRect,NSZeroRect)) leftRect.size.width -= NSWidth(trackingRect) + 4;
 		
 	do {
-        mouseLocation = [controlView convertPoint: [currentEvent locationInWindow] fromView:nil];
+        mouseLocation = [controlView convertPoint: currentEvent.locationInWindow fromView:nil];
 		
-		switch ([currentEvent type])
+		switch (currentEvent.type)
 		{
 			case NSLeftMouseDown:
 			{
@@ -699,12 +696,12 @@
 					else
 					{
 						// Mouse was over the remove image, reset all
-						[self setKeyCombo: SRMakeKeyCombo(ShortcutRecorderEmptyCode, ShortcutRecorderEmptyFlags)];
+						self.keyCombo = SRMakeKeyCombo(ShortcutRecorderEmptyCode, ShortcutRecorderEmptyFlags);
 					}
 				}
 				else if ([controlView mouse:mouseLocation inRect:leftRect] && !isRecording)
 				{
-					if ([self isEnabled]) 
+					if (self.enabled) 
 					{
                         [self _startRecordingTransition];
 					}
@@ -717,7 +714,7 @@
 				}
 				
 				// Any click inside will make us firstResponder
-				if ([self isEnabled]) [[controlView window] makeFirstResponder: controlView];
+				if (self.enabled) [controlView.window makeFirstResponder: controlView];
 
 				// Reset tracking rects and redisplay
 				[self resetTrackingRects];
@@ -727,7 +724,7 @@
 			}
 		}
 		
-    } while ((currentEvent = [[controlView window] nextEventMatchingMask:(NSLeftMouseDraggedMask | NSLeftMouseUpMask) untilDate:[NSDate distantFuture] inMode:NSEventTrackingRunLoopMode dequeue:YES]));
+    } while ((currentEvent = [controlView.window nextEventMatchingMask:(NSLeftMouseDraggedMask | NSLeftMouseUpMask) untilDate:[NSDate distantFuture] inMode:NSEventTrackingRunLoopMode dequeue:YES]));
 	
     return YES;
 }
@@ -750,7 +747,7 @@
 {
     // reset tracking rects and redisplay
     [self resetTrackingRects];
-    [[self controlView] display];
+    [self.controlView display];
     
     return YES;
 }
@@ -762,7 +759,7 @@
 	}
     
     [self resetTrackingRects];
-    [[self controlView] display];
+    [self.controlView display];
     return YES;
 }
 
@@ -770,13 +767,13 @@
 
 - (BOOL) performKeyEquivalent:(NSEvent *)theEvent
 {	
-	NSUInteger flags = [self _filteredCocoaFlags: [theEvent modifierFlags]];
-	NSNumber *keyCodeNumber = [NSNumber numberWithUnsignedShort: [theEvent keyCode]];
+	NSUInteger flags = [self _filteredCocoaFlags: theEvent.modifierFlags];
+	NSNumber *keyCodeNumber = @(theEvent.keyCode);
 	BOOL snapback = [cancelCharacterSet containsObject: keyCodeNumber];
-	BOOL validModifiers = [self _validModifierFlags: (snapback) ? [theEvent modifierFlags] : flags]; // Snapback key shouldn't interfer with required flags!
+	BOOL validModifiers = [self _validModifierFlags: (snapback) ? theEvent.modifierFlags : flags]; // Snapback key shouldn't interfer with required flags!
     
     // Special case for the space key when we aren't recording...
-    if (!isRecording && [[theEvent characters] isEqualToString:@" "]) {
+    if (!isRecording && [theEvent.characters isEqualToString:@" "]) {
         [self _startRecordingTransition];
         return YES;
     }
@@ -803,33 +800,33 @@
 			
 			if (goAhead) {
 				
-				NSString *character = [[theEvent charactersIgnoringModifiers] uppercaseString];
+				NSString *character = theEvent.charactersIgnoringModifiers.uppercaseString;
 				
 			// accents like "¬¥" or "`" will be ignored since we don't get a keycode
-				if ([character length]) {
+				if (character.length) {
 					NSError *error = nil;
 					
 				// Check if key combination is already used or not allowed by the delegate
-					if ( [validator isKeyCode:[theEvent keyCode] 
+					if ( [validator isKeyCode:theEvent.keyCode 
 								andFlagsTaken:[self _filteredCocoaToCarbonFlags:flags]
 										error:&error] ) {
                     // display the error...
 						NSAlert *alert = [NSAlert alertWithNonRecoverableError:error];
-						[alert setAlertStyle:NSCriticalAlertStyle];
+						alert.alertStyle = NSCriticalAlertStyle;
 						[alert runModal];
 						
 					// Recheck pressed modifier keys
-						[self flagsChanged: [NSApp currentEvent]];
+						[self flagsChanged: NSApp.currentEvent];
 						
 						return YES;
 					} else {
 					// All ok, set new combination
 						keyCombo.flags = flags;
-						keyCombo.code = [theEvent keyCode];
+						keyCombo.code = theEvent.keyCode;
 						
 						hasKeyChars = YES;
-						keyChars = [theEvent characters];
-						keyCharsIgnoringModifiers = [theEvent charactersIgnoringModifiers];
+						keyChars = theEvent.characters;
+						keyCharsIgnoringModifiers = theEvent.charactersIgnoringModifiers;
 //						NSLog(@"keychars: %@, ignoringmods: %@", keyChars, keyCharsIgnoringModifiers);
 //						NSLog(@"calculated keychars: %@, ignoring: %@", SRStringForKeyCode(keyCombo.code), SRCharacterForKeyCodeAndCocoaFlags(keyCombo.code,keyCombo.flags));
 						
@@ -855,14 +852,14 @@
         [self _endRecordingTransition];
 		
 		[self resetTrackingRects];
-		[[self controlView] display];
+		[self.controlView display];
 		
 		return YES;
 	} else {
 		//Start recording when the spacebar is pressed while the control is first responder
-		if (([[[self controlView] window] firstResponder] == [self controlView]) &&
-			([[theEvent characters] length] && [[theEvent characters] characterAtIndex:0] == 32) &&
-			([self isEnabled]))
+		if ((self.controlView.window.firstResponder == self.controlView) &&
+			(theEvent.characters.length && [theEvent.characters characterAtIndex:0] == 32) &&
+			(self.enabled))
 		{
 			[self _startRecordingTransition];
 		}
@@ -875,8 +872,8 @@
 {
 	if (isRecording)
 	{
-		recordingFlags = [self _filteredCocoaFlags: [theEvent modifierFlags]];
-		[[self controlView] display];
+		recordingFlags = [self _filteredCocoaFlags: theEvent.modifierFlags];
+		[self.controlView display];
 	}
 }
 
@@ -894,7 +891,7 @@
 	// filter new flags and change keycombo if not recording
 	if (isRecording)
 	{
-		recordingFlags = [self _filteredCocoaFlags: [[NSApp currentEvent] modifierFlags]];;
+		recordingFlags = [self _filteredCocoaFlags: NSApp.currentEvent.modifierFlags];;
 	}
 	else
 	{
@@ -912,7 +909,7 @@
 		}
 	}
 	
-	[[self controlView] display];
+	[self.controlView display];
 }
 
 - (BOOL)allowsKeyOnly {
@@ -948,7 +945,7 @@
 	// filter new flags and change keycombo if not recording
 	if (isRecording)
 	{
-		recordingFlags = [self _filteredCocoaFlags: [[NSApp currentEvent] modifierFlags]];
+		recordingFlags = [self _filteredCocoaFlags: NSApp.currentEvent.modifierFlags];
 	}
 	else
 	{
@@ -966,7 +963,7 @@
 		}
 	}
 	
-	[[self controlView] display];
+	[self.controlView display];
 }
 
 - (KeyCombo)keyCombo
@@ -988,7 +985,7 @@
 	// Save if needed
 	[self _saveKeyCombo];
 	
-	[[self controlView] display];
+	[self.controlView display];
 }
 
 - (BOOL)canCaptureGlobalHotKeys
@@ -1062,8 +1059,8 @@
 	hasKeyChars = NO;
 	
 	// These keys will cancel the recoding mode if not pressed with any modifier
-	cancelCharacterSet = [[NSSet alloc] initWithObjects: [NSNumber numberWithInteger:ShortcutRecorderEscapeKey], 
-		[NSNumber numberWithInteger:ShortcutRecorderBackspaceKey], [NSNumber numberWithInteger:ShortcutRecorderDeleteKey], nil];
+	cancelCharacterSet = [[NSSet alloc] initWithObjects: @ShortcutRecorderEscapeKey, 
+		@ShortcutRecorderBackspaceKey, @ShortcutRecorderDeleteKey, nil];
 		
 	NSNotificationCenter *notificationCenter = [NSNotificationCenter defaultCenter];
 	[notificationCenter addObserver:self selector:@selector(_createGradient) name:NSSystemColorsDidChangeNotification object:nil]; // recreate gradient if needed
@@ -1132,7 +1129,7 @@
 		}
 	} else {
 //		NSLog(@"more to do");
-		[[self controlView] setNeedsDisplay:YES];
+		[self.controlView setNeedsDisplay:YES];
 		[[self class] cancelPreviousPerformRequestsWithTarget:self selector:@selector(_transitionTick) object:nil];
 		[self performSelector:@selector(_transitionTick) withObject:nil afterDelay:(SRTransitionDuration/SRTransitionFrames)];
 	}
@@ -1148,11 +1145,11 @@
     
 /*	[self setFocusRingType:NSFocusRingTypeNone];
 	[[self controlView] setFocusRingType:NSFocusRingTypeNone];*/	
-	[[self controlView] setNeedsDisplay:YES];
+	[self.controlView setNeedsDisplay:YES];
 	
     // invalidate the focus ring rect...
-    NSView *controlView = [self controlView];
-    [controlView setKeyboardFocusRingNeedsDisplayInRect:[controlView bounds]];
+    NSView *controlView = self.controlView;
+    [controlView setKeyboardFocusRingNeedsDisplayInRect:controlView.bounds];
 
     if (globalHotKeys) hotKeyModeToken = PushSymbolicHotKeyMode(kHIHotKeyModeAllDisabled);
 }
@@ -1164,11 +1161,11 @@
 
 /*	[self setFocusRingType:NSFocusRingTypeNone];
 	[[self controlView] setFocusRingType:NSFocusRingTypeNone];*/	
-	[[self controlView] setNeedsDisplay:YES];
+	[self.controlView setNeedsDisplay:YES];
 	
     // invalidate the focus ring rect...
-    NSView *controlView = [self controlView];
-    [controlView setKeyboardFocusRingNeedsDisplayInRect:[controlView bounds]];
+    NSView *controlView = self.controlView;
+    [controlView setKeyboardFocusRingNeedsDisplayInRect:controlView.bounds];
 	
 	if (globalHotKeys) PopSymbolicHotKeyMode(hotKeyModeToken);
 }
@@ -1182,23 +1179,21 @@
 
 - (void)_saveKeyCombo
 {
-	NSString *defaultsKey = [self autosaveName];
+	NSString *defaultsKey = self.autosaveName;
 
-	if (defaultsKey != nil && [defaultsKey length])
+	if (defaultsKey != nil && defaultsKey.length)
 	{
-		id values = [[NSUserDefaultsController sharedUserDefaultsController] values];
+		id values = [NSUserDefaultsController sharedUserDefaultsController].values;
 		
-		NSDictionary *defaultsValue = [NSDictionary dictionaryWithObjectsAndKeys:
-			[NSNumber numberWithShort: keyCombo.code], @"keyCode",
-			[NSNumber numberWithUnsignedInteger: keyCombo.flags], @"modifierFlags", // cocoa
-			[NSNumber numberWithUnsignedInteger:SRCocoaToCarbonFlags(keyCombo.flags)], @"modifiers", // carbon, for compatibility with PTKeyCombo
-			nil];
+		NSDictionary *defaultsValue = @{@"keyCode": @(keyCombo.code),
+			@"modifierFlags": @(keyCombo.flags), // cocoa
+			@"modifiers": @(SRCocoaToCarbonFlags(keyCombo.flags))};
 		
 		if (hasKeyChars) {
 			
 			NSMutableDictionary *mutableDefaultsValue = [defaultsValue mutableCopy];
-			[mutableDefaultsValue setObject:keyChars forKey:@"keyChars"];
-			[mutableDefaultsValue setObject:keyCharsIgnoringModifiers forKey:@"keyCharsIgnoringModifiers"];
+			mutableDefaultsValue[@"keyChars"] = keyChars;
+			mutableDefaultsValue[@"keyCharsIgnoringModifiers"] = keyCharsIgnoringModifiers;
 			
 			defaultsValue = mutableDefaultsValue;
 		}
@@ -1209,11 +1204,11 @@
 
 - (void)_loadKeyCombo
 {
-	NSString *defaultsKey = [self autosaveName];
+	NSString *defaultsKey = self.autosaveName;
 
-	if (defaultsKey != nil && [defaultsKey length])
+	if (defaultsKey != nil && defaultsKey.length)
 	{
-		id values = [[NSUserDefaultsController sharedUserDefaultsController] values];
+		id values = [NSUserDefaultsController sharedUserDefaultsController].values;
 		NSDictionary *savedCombo = [values valueForKey: [self _defaultsKeyForAutosaveName: defaultsKey]];
 		
 		NSInteger keyCode = [[savedCombo valueForKey: @"keyCode"] shortValue];
@@ -1238,7 +1233,7 @@
 		if (delegate != nil && [delegate respondsToSelector: @selector(shortcutRecorderCell:keyComboDidChange:)])
 			[delegate shortcutRecorderCell:self keyComboDidChange:keyCombo];
 		
-		[[self controlView] display];
+		[self.controlView display];
 	}
 }
 
@@ -1246,13 +1241,13 @@
 
 - (NSRect)_removeButtonRectForFrame:(NSRect)cellFrame
 {	
-	if ([self _isEmpty] || ![self isEnabled]) return NSZeroRect;
+	if ([self _isEmpty] || !self.enabled) return NSZeroRect;
 	
 	NSRect removeButtonRect;
 	NSImage *removeImage = SRResIndImage(@"SRRemoveShortcut");
 	
-	removeButtonRect.origin = NSMakePoint(NSMaxX(cellFrame) - [removeImage size].width - 4, (NSMaxY(cellFrame) - [removeImage size].height)/2);
-	removeButtonRect.size = [removeImage size];
+	removeButtonRect.origin = NSMakePoint(NSMaxX(cellFrame) - removeImage.size.width - 4, (NSMaxY(cellFrame) - removeImage.size.height)/2);
+	removeButtonRect.size = removeImage.size;
 
 	return removeButtonRect;
 }
@@ -1264,8 +1259,8 @@
 	NSRect snapbackRect;
 	NSImage *snapbackImage = SRResIndImage(@"SRSnapback");
 	
-	snapbackRect.origin = NSMakePoint(NSMaxX(cellFrame) - [snapbackImage size].width - 2, (NSMaxY(cellFrame) - [snapbackImage size].height)/2 + 1);
-	snapbackRect.size = [snapbackImage size];
+	snapbackRect.origin = NSMakePoint(NSMaxX(cellFrame) - snapbackImage.size.width - 2, (NSMaxY(cellFrame) - snapbackImage.size.height)/2 + 1);
+	snapbackRect.size = snapbackImage.size;
 
 	return snapbackRect;
 }

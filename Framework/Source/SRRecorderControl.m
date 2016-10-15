@@ -35,20 +35,20 @@
     return [SRRecorderCell class];
 }
 
-- (id)initWithFrame:(NSRect)frameRect
+- (instancetype)initWithFrame:(NSRect)frameRect
 {
 	self = [super initWithFrame: frameRect];
 	
-	[SRCell setDelegate: self];
+	(SRCell).delegate = self;
 	
 	return self;
 }
 
-- (id)initWithCoder:(NSCoder *)aDecoder
+- (instancetype)initWithCoder:(NSCoder *)aDecoder
 {
 	self = [super initWithCoder: aDecoder];
 	
-	[SRCell setDelegate: self];
+	(SRCell).delegate = self;
 	
 	return self;
 }
@@ -79,33 +79,33 @@
 
 - (BOOL) becomeFirstResponder 
 {
-    BOOL okToChange = [SRCell becomeFirstResponder];
-    if (okToChange) [super setKeyboardFocusRingNeedsDisplayInRect:[self bounds]];
+    BOOL okToChange = (SRCell).becomeFirstResponder;
+    if (okToChange) [super setKeyboardFocusRingNeedsDisplayInRect:self.bounds];
     return okToChange;
 }
 
 - (BOOL) resignFirstResponder 
 {
-    BOOL okToChange = [SRCell resignFirstResponder];
-    if (okToChange) [super setKeyboardFocusRingNeedsDisplayInRect:[self bounds]];
+    BOOL okToChange = (SRCell).resignFirstResponder;
+    if (okToChange) [super setKeyboardFocusRingNeedsDisplayInRect:self.bounds];
     return okToChange;
 }
 
 #pragma mark *** Aesthetics ***
 - (BOOL)animates {
-	return [SRCell animates];
+	return (SRCell).animates;
 }
 
 - (void)setAnimates:(BOOL)an {
-	[SRCell setAnimates:an];
+	(SRCell).animates = an;
 }
 
 - (SRRecorderStyle)style {
-	return [SRCell style];
+	return (SRCell).style;
 }
 
 - (void)setStyle:(SRRecorderStyle)nStyle {
-	[SRCell setStyle:nStyle];
+	(SRCell).style = nStyle;
 }
 
 #pragma mark *** Interface Stuff ***
@@ -116,7 +116,7 @@
 {
     NSNotificationCenter *center = [NSNotificationCenter defaultCenter];
     
-    if ([self window]) 
+    if (self.window) 
     {
         [center removeObserver: self];
         [center addObserver:self selector:@selector(viewFrameDidChange:) name:NSViewFrameDidChangeNotification object:self];
@@ -145,15 +145,15 @@
 	correctedFrarme.size.height = SRMaxHeight;
 	if (correctedFrarme.size.width < SRMinWidth) correctedFrarme.size.width = SRMinWidth;
 
-	[super setFrame: correctedFrarme];
+	super.frame = correctedFrarme;
 }
 
 - (NSString *)keyChars {
-	return [SRCell keyChars];
+	return (SRCell).keyChars;
 }
 
 - (NSString *)keyCharsIgnoringModifiers {
-	return [SRCell keyCharsIgnoringModifiers];	
+	return (SRCell).keyCharsIgnoringModifiers;	
 }
 
 #pragma mark *** Key Interception ***
@@ -163,7 +163,7 @@
 {
 	// Only if we're key, please. Otherwise hitting Space after having
 	// tabbed past SRRecorderControl will put you into recording mode.
-	if (([[[self window] firstResponder] isEqualTo:self])) { 
+	if (([self.window.firstResponder isEqualTo:self])) { 
 		if ([SRCell performKeyEquivalent:theEvent]) return YES;
 	}
 
@@ -187,16 +187,16 @@
 
 - (NSUInteger)allowedFlags
 {
-	return [SRCell allowedFlags];
+	return (SRCell).allowedFlags;
 }
 
 - (void)setAllowedFlags:(NSUInteger)flags
 {
-	[SRCell setAllowedFlags: flags];
+	(SRCell).allowedFlags = flags;
 }
 
 - (BOOL)allowsKeyOnly {
-	return [SRCell allowsKeyOnly];
+	return (SRCell).allowsKeyOnly;
 }
 
 - (void)setAllowsKeyOnly:(BOOL)nAllowsKeyOnly {
@@ -208,71 +208,69 @@
 }
 
 - (BOOL)escapeKeysRecord {
-	return [SRCell escapeKeysRecord];
+	return (SRCell).escapeKeysRecord;
 }
 
 - (void)setEscapeKeysRecord:(BOOL)nEscapeKeysRecord {
-	[SRCell setEscapeKeysRecord:nEscapeKeysRecord];
+	(SRCell).escapeKeysRecord = nEscapeKeysRecord;
 }
 
 - (BOOL)canCaptureGlobalHotKeys
 {
-	return [[self cell] canCaptureGlobalHotKeys];
+	return (SRCell).canCaptureGlobalHotKeys;
 }
 
 - (void)setCanCaptureGlobalHotKeys:(BOOL)inState
 {
-	[[self cell] setCanCaptureGlobalHotKeys:inState];
+	(SRCell).canCaptureGlobalHotKeys = inState;
 }
 
 - (NSUInteger)requiredFlags
 {
-	return [SRCell requiredFlags];
+	return (SRCell).requiredFlags;
 }
 
 - (void)setRequiredFlags:(NSUInteger)flags
 {
-	[SRCell setRequiredFlags: flags];
+	(SRCell).requiredFlags = flags;
 }
 
 - (KeyCombo)keyCombo
 {
-	return [SRCell keyCombo];
+	return (SRCell).keyCombo;
 }
 
 - (void)setKeyCombo:(KeyCombo)aKeyCombo
 {
-	[SRCell setKeyCombo: aKeyCombo];
+	(SRCell).keyCombo = aKeyCombo;
 }
 
 #pragma mark *** Binding Methods ***
 
 - (NSDictionary *)objectValue
 {
-    KeyCombo keyCombo = [self keyCombo];
+    KeyCombo keyCombo = self.keyCombo;
     if (keyCombo.code == ShortcutRecorderEmptyCode || keyCombo.flags == ShortcutRecorderEmptyFlags)
         return nil;
 
-    return [NSDictionary dictionaryWithObjectsAndKeys:
-            [self keyCharsIgnoringModifiers], @"characters",
-            [NSNumber numberWithInteger:keyCombo.code], @"keyCode",
-            [NSNumber numberWithUnsignedInteger:keyCombo.flags], @"modifierFlags",
-            nil];
+    return @{@"characters": self.keyCharsIgnoringModifiers,
+            @"keyCode": @(keyCombo.code),
+            @"modifierFlags": @(keyCombo.flags)};
 }
 
 - (void)setObjectValue:(NSDictionary *)shortcut
 {
     KeyCombo keyCombo = SRMakeKeyCombo(ShortcutRecorderEmptyCode, ShortcutRecorderEmptyFlags);
     if (shortcut != nil && [shortcut isKindOfClass:[NSDictionary class]]) {
-        NSNumber *keyCode = [shortcut objectForKey:@"keyCode"];
-        NSNumber *modifierFlags = [shortcut objectForKey:@"modifierFlags"];
+        NSNumber *keyCode = shortcut[@"keyCode"];
+        NSNumber *modifierFlags = shortcut[@"modifierFlags"];
         if ([keyCode isKindOfClass:[NSNumber class]] && [modifierFlags isKindOfClass:[NSNumber class]]) {
-            keyCombo.code = [keyCode integerValue];
-            keyCombo.flags = [modifierFlags unsignedIntegerValue];
+            keyCombo.code = keyCode.integerValue;
+            keyCombo.flags = modifierFlags.unsignedIntegerValue;
         }
     }
 
-	[self setKeyCombo: keyCombo];
+	self.keyCombo = keyCombo;
 }
 
 - (Class)valueClassForBinding:(NSString *)binding
@@ -287,19 +285,19 @@
 
 - (NSString *)autosaveName
 {
-	return [SRCell autosaveName];
+	return (SRCell).autosaveName;
 }
 
 - (void)setAutosaveName:(NSString *)aName
 {
-	[SRCell setAutosaveName: aName];
+	(SRCell).autosaveName = aName;
 }
 
 #pragma mark -
 
 - (NSString *)keyComboString
 {
-	return [SRCell keyComboString];
+	return (SRCell).keyComboString;
 }
 
 #pragma mark *** Conversion Methods ***
@@ -350,8 +348,8 @@
 		return;
 
 	// apply the value transformer, if one has been set
-    NSDictionary *value = [self objectValue];
-	NSDictionary *bindingOptions = [bindingInfo objectForKey:NSOptionsKey];
+    NSDictionary *value = self.objectValue;
+	NSDictionary *bindingOptions = bindingInfo[NSOptionsKey];
 	if (bindingOptions != nil) {
 		NSValueTransformer *transformer = [bindingOptions valueForKey:NSValueTransformerBindingOption];
 		if (NilOrNull(transformer)) {
@@ -368,13 +366,13 @@
 		}
 	}
 
-	id boundObject = [bindingInfo objectForKey:NSObservedObjectKey];
+	id boundObject = bindingInfo[NSObservedObjectKey];
 	if (NilOrNull(boundObject)) {
 		NSLog(@"ERROR: NSObservedObjectKey was nil for value binding in %s", __PRETTY_FUNCTION__);
 		return;
 	}
 
-	NSString *boundKeyPath = [bindingInfo objectForKey:NSObservedKeyPathKey];
+	NSString *boundKeyPath = bindingInfo[NSObservedKeyPathKey];
     if (NilOrNull(boundKeyPath)) {
 		NSLog(@"ERROR: NSObservedKeyPathKey was nil for value binding in %s", __PRETTY_FUNCTION__);
 		return;

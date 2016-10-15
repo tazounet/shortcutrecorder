@@ -20,13 +20,13 @@
 //---------------------------------------------------------- 
 // iinitWithDelegate:
 //---------------------------------------------------------- 
-- (id) initWithDelegate:(id)theDelegate;
+- (instancetype) initWithDelegate:(id)theDelegate;
 {
     self = [super init];
     if ( !self )
         return nil;
     
-    [self setDelegate:theDelegate];
+    self.delegate = theDelegate;
     
     return self;
 }
@@ -53,12 +53,10 @@
                 NSString *recoverySuggestion = [NSString stringWithFormat: 
                     SRLoc(@"The key combination \"%@\" can't be used because %@."), 
                     SRReadableStringForCarbonModifierFlagsAndKeyCode( flags, keyCode ),
-                    ( delegateReason && [delegateReason length] ) ? delegateReason : @"it's already used"];
-                NSDictionary *userInfo = [NSDictionary dictionaryWithObjectsAndKeys:
-										  description, NSLocalizedDescriptionKey,
-										  recoverySuggestion, NSLocalizedRecoverySuggestionErrorKey,
-										  [NSArray arrayWithObject:@"OK"], NSLocalizedRecoveryOptionsErrorKey, // Is this needed? Shouldn't it show 'OK' by default? -AK
-										  nil];
+                    ( delegateReason && delegateReason.length ) ? delegateReason : @"it's already used"];
+                NSDictionary *userInfo = @{NSLocalizedDescriptionKey: description,
+										  NSLocalizedRecoverySuggestionErrorKey: recoverySuggestion,
+										  NSLocalizedRecoveryOptionsErrorKey: @[@"OK"]};
                 *error = [NSError errorWithDomain:NSCocoaErrorDomain code:0 userInfo:userInfo];
             }
 			return YES;
@@ -95,7 +93,7 @@
 	while (( globalHotKeyInfoDictionary = [globalHotKeysEnumerator nextObject] ))
 	{
 		// Only check if global hotkey is enabled
-		if ( (__bridge CFBooleanRef)[globalHotKeyInfoDictionary objectForKey:(NSString *)kHISymbolicHotKeyEnabled] != kCFBooleanTrue )
+		if ( (__bridge CFBooleanRef)globalHotKeyInfoDictionary[(NSString *)kHISymbolicHotKeyEnabled] != kCFBooleanTrue )
             continue;
 		
         globalCommandMod    = NO;
@@ -103,9 +101,9 @@
         globalShiftMod      = NO;
         globalCtrlMod       = NO;
         
-        globalHotKeyCharCode = [(NSNumber *)[globalHotKeyInfoDictionary objectForKey:(NSString *)kHISymbolicHotKeyCode] shortValue];
+        globalHotKeyCharCode = ((NSNumber *)globalHotKeyInfoDictionary[(NSString *)kHISymbolicHotKeyCode]).shortValue;
         
-        CFNumberGetValue((CFNumberRef)[globalHotKeyInfoDictionary objectForKey: (NSString *)kHISymbolicHotKeyModifiers],kCFNumberSInt32Type,&globalHotKeyFlags);
+        CFNumberGetValue((CFNumberRef)globalHotKeyInfoDictionary[(NSString *)kHISymbolicHotKeyModifiers],kCFNumberSInt32Type,&globalHotKeyFlags);
         
         if ( globalHotKeyFlags & cmdKey )        globalCommandMod = YES;
         if ( globalHotKeyFlags & optionKey )     globalOptionMod = YES;
@@ -113,7 +111,7 @@
         if ( globalHotKeyFlags & controlKey )    globalCtrlMod = YES;
         
         NSString *localKeyString = SRStringForKeyCode( keyCode );
-        if (![localKeyString length]) return YES;
+        if (!localKeyString.length) return YES;
         
         
         // compare unichar value and modifier flags
@@ -131,11 +129,9 @@
                 NSString *recoverySuggestion = [NSString stringWithFormat: 
                     SRLoc(@"The key combination \"%@\" can't be used because it's already used by a system-wide keyboard shortcut. (If you really want to use this key combination, most shortcuts can be changed in the Keyboard & Mouse panel in System Preferences.)"), 
                     SRReadableStringForCarbonModifierFlagsAndKeyCode( flags, keyCode )];
-				NSDictionary *userInfo = [NSDictionary dictionaryWithObjectsAndKeys:
-										  description, NSLocalizedDescriptionKey,
-										  recoverySuggestion, NSLocalizedRecoverySuggestionErrorKey,
-										  [NSArray arrayWithObject:@"OK"], NSLocalizedRecoveryOptionsErrorKey,
-										  nil];
+				NSDictionary *userInfo = @{NSLocalizedDescriptionKey: description,
+										  NSLocalizedRecoverySuggestionErrorKey: recoverySuggestion,
+										  NSLocalizedRecoveryOptionsErrorKey: @[@"OK"]};
                 *error = [NSError errorWithDomain:NSCocoaErrorDomain code:0 userInfo:userInfo];
             }
             return YES;
@@ -143,7 +139,7 @@
 	}
 	
 	// Check menus too
-	return [self isKeyCode:keyCode andFlags:flags takenInMenu:[NSApp mainMenu] error:error];
+	return [self isKeyCode:keyCode andFlags:flags takenInMenu:NSApp.mainMenu error:error];
 }
 
 //---------------------------------------------------------- 
@@ -151,7 +147,7 @@
 //---------------------------------------------------------- 
 - (BOOL) isKeyCode:(NSInteger)keyCode andFlags:(NSUInteger)flags takenInMenu:(NSMenu *)menu error:(NSError **)error;
 {
-    NSArray *menuItemsArray = [menu itemArray];
+    NSArray *menuItemsArray = menu.itemArray;
 	NSEnumerator *menuItemsEnumerator = [menuItemsArray objectEnumerator];
 	NSMenuItem *menuItem;
 	NSUInteger menuItemModifierFlags;
@@ -169,15 +165,15 @@
 	while (( menuItem = [menuItemsEnumerator nextObject] ))
 	{
         // rescurse into all submenus...
-		if ( [menuItem hasSubmenu] )
+		if ( menuItem.hasSubmenu )
 		{
-			if ( [self isKeyCode:keyCode andFlags:flags takenInMenu:[menuItem submenu] error:error] ) 
+			if ( [self isKeyCode:keyCode andFlags:flags takenInMenu:menuItem.submenu error:error] ) 
 			{
 				return YES;
 			}
 		}
 		
-		if ( ( menuItemKeyEquivalent = [menuItem keyEquivalent] )
+		if ( ( menuItemKeyEquivalent = menuItem.keyEquivalent )
              && ( ![menuItemKeyEquivalent isEqualToString: @""] ) )
 		{
 			menuItemCommandMod = NO;
@@ -185,7 +181,7 @@
 			menuItemShiftMod = NO;
 			menuItemCtrlMod = NO;
 			
-			menuItemModifierFlags = [menuItem keyEquivalentModifierMask];
+			menuItemModifierFlags = menuItem.keyEquivalentModifierMask;
             
 			if ( menuItemModifierFlags & NSCommandKeyMask )     menuItemCommandMod = YES;
 			if ( menuItemModifierFlags & NSAlternateKeyMask )   menuItemOptionMod = YES;
@@ -195,7 +191,7 @@
 			NSString *localKeyString = SRStringForKeyCode( keyCode );
 			
 			// Compare translated keyCode and modifier flags
-			if ( ( [[menuItemKeyEquivalent uppercaseString] isEqualToString: localKeyString] ) 
+			if ( ( [menuItemKeyEquivalent.uppercaseString isEqualToString: localKeyString] ) 
                  && ( menuItemCommandMod == localCommandMod ) 
                  && ( menuItemOptionMod == localOptionMod ) 
                  && ( menuItemShiftMod == localShiftMod ) 
@@ -209,12 +205,10 @@
                     NSString *recoverySuggestion = [NSString stringWithFormat: 
                         SRLoc(@"The key combination \"%@\" can't be used because it's already used by the menu item \"%@\"."), 
                         SRReadableStringForCocoaModifierFlagsAndKeyCode( menuItemModifierFlags, keyCode ),
-                        [menuItem title]];
-                    NSDictionary *userInfo = [NSDictionary dictionaryWithObjectsAndKeys:
-											  description, NSLocalizedDescriptionKey,
-											  recoverySuggestion, NSLocalizedRecoverySuggestionErrorKey,
-											  [NSArray arrayWithObject:@"OK"], NSLocalizedRecoveryOptionsErrorKey,
-											  nil];
+                        menuItem.title];
+                    NSDictionary *userInfo = @{NSLocalizedDescriptionKey: description,
+											  NSLocalizedRecoverySuggestionErrorKey: recoverySuggestion,
+											  NSLocalizedRecoveryOptionsErrorKey: @[@"OK"]};
                     *error = [NSError errorWithDomain:NSCocoaErrorDomain code:0 userInfo:userInfo];
                 }
 				return YES;

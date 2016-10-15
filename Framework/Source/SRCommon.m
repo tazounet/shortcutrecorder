@@ -41,7 +41,7 @@ NSString * SRStringForKeyCode( NSInteger keyCode )
     static SRKeyCodeTransformer *keyCodeTransformer = nil;
     if ( !keyCodeTransformer )
         keyCodeTransformer = [[SRKeyCodeTransformer alloc] init];
-    return [keyCodeTransformer transformedValue:[NSNumber numberWithShort:keyCode]];
+    return [keyCodeTransformer transformedValue:@(keyCode)];
 }
 
 //---------------------------------------------------------- 
@@ -240,9 +240,9 @@ CGFloat SRAnimationEaseInOut(CGFloat t) {
 //---------------------------------------------------------- 
 + (NSAlert *) alertWithNonRecoverableError:(NSError *)error;
 {
-	NSString *reason = [error localizedRecoverySuggestion];
-	return [self alertWithMessageText:[error localizedDescription]
-						defaultButton:[[error localizedRecoveryOptions] objectAtIndex:0U]
+	NSString *reason = error.localizedRecoverySuggestion;
+	return [self alertWithMessageText:error.localizedDescription
+						defaultButton:error.localizedRecoveryOptions[0U]
 					  alternateButton:nil
 						  otherButton:nil
 			informativeTextWithFormat:(reason ? reason : @""), nil];
@@ -273,7 +273,7 @@ static NSMutableDictionary *SRSharedImageCache = nil;
 //		NSLog(@"inited cache");
 	}
 	NSImage *cachedImage = nil;
-	if (nil != (cachedImage = [SRSharedImageCache objectForKey:name])) {
+	if (nil != (cachedImage = SRSharedImageCache[name])) {
 //		NSLog(@"returned cached image: %@", cachedImage);
 		return cachedImage;
 	}
@@ -281,15 +281,15 @@ static NSMutableDictionary *SRSharedImageCache = nil;
 //	NSLog(@"constructing image");
 	NSSize size;
 	NSValue *sizeValue = [self performSelector:NSSelectorFromString([NSString stringWithFormat:@"_size%@", name])];
-	size = [sizeValue sizeValue];
+	size = sizeValue.sizeValue;
 //	NSLog(@"size: %@", NSStringFromSize(size));
 	
 	NSCustomImageRep *customImageRep = [[NSCustomImageRep alloc] initWithDrawSelector:NSSelectorFromString([NSString stringWithFormat:@"_draw%@:", name]) delegate:self];
-	[customImageRep setSize:size];
+	customImageRep.size = size;
 //	NSLog(@"created customImageRep: %@", customImageRep);
 	NSImage *returnImage = [[NSImage alloc] initWithSize:size];
 	[returnImage addRepresentation:customImageRep];
-	[SRSharedImageCache setObject:returnImage forKey:name];
+	SRSharedImageCache[name] = returnImage;
 	
 #ifdef SRCommonWriteDebugImagery
 	
@@ -329,13 +329,13 @@ static NSMutableDictionary *SRSharedImageCache = nil;
 //	NSLog(@"drawSRSnapback using: %@", anNSCustomImageRep);
 	
 	NSCustomImageRep *rep = anNSCustomImageRep;
-	NSSize size = [rep size];
+	NSSize size = rep.size;
 	[[NSColor whiteColor] setFill];
 	CGFloat hScale = (size.width/1.0f);
 	CGFloat vScale = (size.height/1.0f);
 	
 	NSBezierPath *bp = [[NSBezierPath alloc] init];
-	[bp setLineWidth:hScale];
+	bp.lineWidth = hScale;
 	
 	[bp moveToPoint:MakeRelativePoint(0.0489685f, 0.6181513f)];
 	[bp lineToPoint:MakeRelativePoint(0.4085750f, 0.9469318f)];
@@ -354,9 +354,9 @@ static NSMutableDictionary *SRSharedImageCache = nil;
 	[bp transformUsingAffineTransform:flip];
 	
 	NSShadow *sh = [[NSShadow alloc] init];
-	[sh setShadowColor:[[NSColor blackColor] colorWithAlphaComponent:0.45f]];
-	[sh setShadowBlurRadius:1.0f];
-	[sh setShadowOffset:NSMakeSize(0.0f,-1.0f)];
+	sh.shadowColor = [[NSColor blackColor] colorWithAlphaComponent:0.45f];
+	sh.shadowBlurRadius = 1.0f;
+	sh.shadowOffset = NSMakeSize(0.0f,-1.0f);
 	[sh set];
 	
 	[bp fill];
@@ -373,7 +373,7 @@ static NSMutableDictionary *SRSharedImageCache = nil;
 //	NSLog(@"drawARemoveShortcutBoxUsingRep: %@ opacity: %f", anNSCustomImageRep, opacity);
 	
 	NSCustomImageRep *rep = anNSCustomImageRep;
-	NSSize size = [rep size];
+	NSSize size = rep.size;
 	[[NSColor colorWithCalibratedWhite:0.0f alpha:1.0f-opacity] setFill];
 	CGFloat hScale = (size.width/14.0f);
 	CGFloat vScale = (size.height/14.0f);
@@ -383,7 +383,7 @@ static NSMutableDictionary *SRSharedImageCache = nil;
 	[[NSColor whiteColor] setStroke];
 	
 	NSBezierPath *cross = [[NSBezierPath alloc] init];
-	[cross setLineWidth:hScale*1.2f];
+	cross.lineWidth = hScale*1.2f;
 	
 	[cross moveToPoint:MakeRelativePoint(4.0f,4.0f)];
 	[cross lineToPoint:MakeRelativePoint(10.0f,10.0f)];
